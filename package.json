@@ -1,0 +1,49 @@
+{
+  "name": "pixi-rpgm",
+  "version": "1.0.0",
+  "description": "Adds loader to PixiJS that decrypts RPG Maker assets",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./lib/index.mjs",
+      "require": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "xs build",
+    "docs": "xs docs",
+    "release": "xs release",
+    "start": "xs serve",
+    "test": "xs test",
+    "watch": "xs watch",
+    "demo": "xs serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madtisa/pixi-rpgm.git"
+  },
+  "keywords": [
+    "pixi",
+    "pixijs",
+    "loader",
+    "rpg maker",
+    "rpgmvp",
+    "rpgmvo"
+  ],
+  "author": "madtisa",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/madtisa/pixi-rpgm/issues"
+  },
+  "homepage": "https://github.com/madtisa/pixi-rpgm#readme",
+  "devDependencies": {
+    "@pixi/extension-scripts": "^2.4.1",
+    "typescript": "5.3.3"
+  },
+  "peerDependencies": {
+    "pixi.js": "^7.4.2"
+  }
+}

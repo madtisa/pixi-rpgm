@@ -1,0 +1,13 @@
+{
+  "extends": "@pixi/extension-scripts/tsconfig",
+  "include": [
+    "src"
+  ],
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "scripthost",
+      "es2015"
+    ]
+  }
+}
