@@ -9,18 +9,10 @@ export function getExtension(url: string): string
     return PIXI.utils.path.extname(tempURL).toLowerCase();
 }
 
-export function createDataUrl(arrayBuffer: ArrayBuffer | ITypedArray, type?: string): Promise<string>
+export function createUrl(arrayBuffer: ArrayBuffer | ITypedArray, type?: string): string
 {
     const options = type ? { type } : undefined;
     const blob = new Blob([arrayBuffer], options);
 
-    return new Promise<string>((resolve, reject) =>
-    {
-        const reader = new FileReader();
-
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(reader.error);
-
-        reader.readAsDataURL(blob);
-    });
+    return URL.createObjectURL(blob);
 }

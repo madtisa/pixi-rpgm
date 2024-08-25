@@ -1,19 +1,19 @@
 import * as PIXI from 'pixi.js';
 import decrypt from './imageDecrypter';
-import { createDataUrl, getExtension } from './utils';
+import { createUrl, getExtension } from './utils';
 
 import type { Loader, LoaderParser, ResolvedAsset } from 'pixi.js';
-import {loadTextures} from "pixi.js";
 
-type DecryptedFormat = {
+export type DecryptedFormat = {
     ext: string,
-    loader?: string,
     mimeType?: string,
+    loadParser?: string,
 };
+
 const rpgAssetExtensions = new Map<string, DecryptedFormat>([
-    ['.rpgmvp', { ext: '.png', mimeType: 'image/png', loader: 'loadTextures' }],
-    ['.rpgmvo', { ext: '.ogg', mimeType: 'audio/ogg', loader: 'sound' }],
-    ['.rpgmvm', { ext: '.m4a', mimeType: 'audio/mp4', loader: 'sound' }],
+    ['.rpgmvp', { ext: '.png', mimeType: 'image/png', loadParser: 'loadTextures' }],
+    ['.rpgmvo', { ext: '.ogg', mimeType: 'audio/ogg', loadParser: 'sound' }],
+    ['.rpgmvm', { ext: '.m4a', mimeType: 'audio/mp4', loadParser: 'sound' }],
 ]);
 
 function getDecryptedExtensionInfo(url: string): DecryptedFormat & { encryptedExt: string }
@@ -39,19 +39,14 @@ function getDecryptedUrl(url: string): string
     return url.slice(0, -encryptedExt.length) + ext;
 }
 
-const testPng = loadTextures.test;
-loadTextures.test = function (url, resolvedAsset, loader) {
-    return testPng.call(this, url, resolvedAsset, loader) || resolvedAsset.format === 'png';
-}
-
 const loadRpgMakerAsset = {
     extension: {
         type: PIXI.ExtensionType.LoadParser,
-        priority: 4,
+        priority: PIXI.LoaderParserPriority.Normal,
     },
     name: 'loadRpgm',
     config: {
-        decryptedProperty: Symbol('decryptedKey')
+        decryptedProperty: Symbol('decrypted')
     },
     test(url)
     {
@@ -62,11 +57,11 @@ const loadRpgMakerAsset = {
         const response = await PIXI.settings.ADAPTER.fetch(url);
         const buffer = await response.arrayBuffer();
 
-        const { ext, mimeType } = asset?.data?.decryptedFormat ?? getDecryptedExtensionInfo(url);
+        const { ext, mimeType, loadParser } = asset?.data?.decryptedFormat ?? getDecryptedExtensionInfo(url);
         const decryptedFormat = ext.slice(1);
         const decryptedAlias = getDecryptedUrl(url);
-        const decryptedAssetDataUrl = await createDataUrl(
-            decrypt(new Uint8Array(buffer), asset?.data?.encryptionKey),
+        const decryptedAssetUrl = createUrl(
+            decrypt(new Uint8Array(buffer), asset?.data?.decryptionKey),
             mimeType
         );
 
@@ -75,39 +70,47 @@ const loadRpgMakerAsset = {
         if (asset)
         {
             decryptedAssetMetadata = { ...asset.data };
-            delete decryptedAssetMetadata.encryptionKey;
+            delete decryptedAssetMetadata.decryptionKey;
             delete decryptedAssetMetadata.decryptedFormat;
-            // asset.alias = [decryptedAlias];
-            // asset.src = decryptedAssetDataUrl;
-            // asset.format = decryptedFormat;
-            //
-            // delete asset.data?.encryptionKey;
-            // delete asset.data?.decryptedFormat;
         }
 
-        const decryptedAsset = await loader.load({
-            alias: [decryptedAlias],
-            src: decryptedAssetDataUrl,
-            format: decryptedFormat,
-            data: decryptedAssetMetadata,
-        });
+        try
+        {
+            const decryptedAsset = await loader.load({
+                alias: [decryptedAlias],
+                src: decryptedAssetUrl,
+                format: decryptedFormat,
+                data: decryptedAssetMetadata,
+                loadParser
+            });
 
-        decryptedAsset[this.config?.decryptedProperty] = decryptedAssetDataUrl;
+            if (this.config?.decryptedProperty)
+            {
+                decryptedAsset[this.config.decryptedProperty] = decryptedAssetUrl;
+            }
 
-        return decryptedAsset;
+            return decryptedAsset;
+        }
+        finally
+        {
+            URL.revokeObjectURL(decryptedAssetUrl);
+        }
     },
     unload(asset, resolvedAsset, loader: Loader)
     {
-        const decryptedAssetUrl = asset[this.config?.decryptedProperty];
+        if (!this.config?.decryptedProperty)
+        {
+            return;
+        }
+
+        const decryptedAssetUrl = asset[this.config.decryptedProperty];
 
         if (decryptedAssetUrl)
         {
-            loader.unload(decryptedAssetUrl)
-                .then(() => console.log('Unloaded: ', asset))
-                .catch((e) => console.error(e));
+            loader.unload(decryptedAssetUrl).then(() => undefined);
         }
     }
-} as LoaderParser<any, { encryptionKey: Uint8Array, decryptedFormat?: DecryptedFormat }, {decryptedProperty: symbol}>;
+} as LoaderParser<any, { decryptionKey: Uint8Array, decryptedFormat?: DecryptedFormat }, { decryptedProperty: symbol }>;
 
 PIXI.extensions.add(loadRpgMakerAsset);
 

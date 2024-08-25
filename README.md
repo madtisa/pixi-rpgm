@@ -33,13 +33,13 @@ import 'pixi-rpgm';
 const pngTexture = await PIXI.Assets.load({
     src: './png.rpgmvp',
     data: {
-        encryptionKey: new Uint8Array(/* ... */)
+        decryptionKey: new Uint8Array(/* ... */)
     }
 });
 stage.addChild(new PIXI.Sprite(pngTexture));
 ```
 
-For apng:
+For animated png:
 ```js
 import 'pixi-apng';
 import 'pixi-rpgm';
@@ -47,7 +47,7 @@ import 'pixi-rpgm';
 const animatedPng = await PIXI.Assets.load({
     src: './apng.rpgmvp',
     data: {
-        encryptionKey: new Uint8Array(/* ... */),
+        decryptionKey: new Uint8Array(/* ... */),
         decryptedFormat: {
             ext: '.apng',
             mimeType: 'image/apng'

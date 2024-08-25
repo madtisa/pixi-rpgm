@@ -1,24 +1,29 @@
-const headerLength = 16;
+const HEADER_LENGTH = 16;
 
-export default function decrypt(buffer: Uint8Array, encryptionKey?: Uint8Array): Uint8Array
+export default function decrypt(buffer: Uint8Array, decryptionKey?: Uint8Array): Uint8Array
 {
-    if (encryptionKey?.length !== headerLength)
+    if (!decryptionKey)
+    {
+        throw new Error('Decryption key is required to load encrypted files');
+    }
+
+    if (decryptionKey.length !== HEADER_LENGTH)
     {
         throw new Error(
-            `Invalid signature length (expected: ${headerLength}, actual: ${encryptionKey?.length})`
+            `Invalid decryption key length (expected: ${HEADER_LENGTH}, actual: ${decryptionKey?.length})`
         );
     }
 
-    const decryptedBuffer = buffer.subarray(headerLength);
+    const decryptedBuffer = buffer.subarray(HEADER_LENGTH);
 
-    if (decryptedBuffer.length < encryptionKey.length)
+    if (decryptedBuffer.length < decryptionKey.length)
     {
         throw new Error(`Invalid file. File is too small.`);
     }
 
-    for (let i = 0; i < encryptionKey.length; i++)
+    for (let i = 0; i < decryptionKey.length; i++)
     {
-        decryptedBuffer[i] = decryptedBuffer[i] ^ encryptionKey[i];
+        decryptedBuffer[i] = decryptedBuffer[i] ^ decryptionKey[i];
     }
 
     return decryptedBuffer;
